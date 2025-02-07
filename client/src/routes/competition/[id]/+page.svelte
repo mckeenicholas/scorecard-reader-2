@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { liveApiKey } from '../../../stores/wcaStore';
+	import { submitWCALiveResults, type ScannedResult } from '$lib/utils';
+	import ResultsEntryField from '../../../components/ResultsEntryField.svelte';
+	import { liveApiKey, wcaToken } from '../../../stores/wcaStore';
 	import { get } from 'svelte/store';
 
 	const compId = $page.params.id;
@@ -10,13 +12,21 @@
 	let files = $state<any[]>([]);
 	let message = $state<string>('');
 	let results = $state<any[]>([]); // Store results data
-	let nextResult = $state<any | null>(null); // Store next result
+	let currentResult = $state<ScannedResult | null>(null); // Store next result
 	let showModal = $state<boolean>(false); // Control modal visibility
 	let loading = $state<boolean>(false);
 	let noResultsMessage = $state<string>(''); // Message for no results
 	let showManualQueryButton = $state<boolean>(false); // Control visibility of manual query button
 
+	let resultImageURL = $derived(
+		currentResult ? `http://localhost:8000/images/${currentResult.id}.jpg` : ''
+	);
+
 	let apiKey = '';
+
+	$effect(() => {
+		console.log(currentResult);
+	});
 
 	liveApiKey.subscribe((map) => {
 		if (map.has(compId)) {
@@ -67,16 +77,44 @@
 	};
 
 	const getNextResult = async () => {
+		currentResult = null;
+
 		const res = await fetch('http://localhost:8000/next');
 		const data = await res.json();
 
 		if (data.message === 'No more results available.') {
 			noResultsMessage = data.message; // Set message if no result
 			showManualQueryButton = true; // Show manual query button
-			nextResult = null; // Clear the next result
+			currentResult = null; // Clear the next result
 		} else {
-			nextResult = data; // Show the next result
+			currentResult = data; // Show the next result
 			showManualQueryButton = false; // Hide manual query button
+		}
+	};
+
+	const updateResult = async () => {
+		if (!currentResult || !currentResult.id) {
+			console.error('Invalid result ID');
+			return;
+		}
+
+		try {
+			const res = await fetch('http://localhost:8000/result/update', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ submitted: currentResult.id })
+			});
+
+			const data = await res.json();
+			if (!res.ok) {
+				throw new Error(data.detail || 'Failed to update result');
+			}
+
+			console.log('Result updated successfully:', data);
+		} catch (error) {
+			console.error('Error updating result:', error.message);
 		}
 	};
 
@@ -93,8 +131,16 @@
 	};
 
 	const manualQuery = async () => {
-		// Allow user to manually query for the next result
 		await getNextResult();
+	};
+
+	const submit = async () => {
+		if (currentResult) {
+			const wcaLiveAPIKey = get(liveApiKey);
+			await submitWCALiveResults(compId, wcaLiveAPIKey, currentResult);
+			await updateResult();
+			await getNextResult();
+		}
 	};
 </script>
 
@@ -139,14 +185,23 @@
 
 		<button onclick={getNextResult} class="border bg-slate-200 p-2">View Next Result</button>
 
-		{#if nextResult}
-			<div class="mt-4">
-				<h2 class="text-xl">Next Result</h2>
-				<ul>
-					<li><strong>CompetitorID:</strong> {nextResult.competitorID}</li>
-					<li><strong>Round:</strong> {nextResult.round}</li>
-					<li><strong>Event:</strong> {nextResult.event}</li>
-				</ul>
+		{#if currentResult}
+			<!-- svelte-ignore a11y_missing_attribute -->
+			<div class="flex flex-row items-center justify-center space-x-8">
+				<div class="flex flex-col items-center">
+					<img src={resultImageURL} class="max-h-[650px] object-contain" />
+				</div>
+
+				<div class="flex flex-col items-start">
+					<div class="mt-8">
+						<div class="my-10">
+							<p class="text-xl"><strong>Competitor ID:</strong> {currentResult.competitorID}</p>
+							<p class="text-xl"><strong>Round:</strong> {currentResult.round}</p>
+							<p class="text-xl"><strong>Event:</strong> {currentResult.event}</p>
+						</div>
+						<ResultsEntryField bind:solveData={currentResult} submitCallBack={submit} />
+					</div>
+				</div>
 			</div>
 		{/if}
 

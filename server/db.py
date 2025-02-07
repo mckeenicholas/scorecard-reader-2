@@ -169,3 +169,22 @@ class CompetitionDatabase:
             print(f"Error executing query: {e}")
         finally:
             conn.close()
+
+
+if __name__ == "__main__":
+    db = CompetitionDatabase()
+    while True:
+        print("\nOptions:")
+        print("1. Reset database")
+        print("2. Run SQL query")
+        print("3. Exit")
+        choice = input("Choose an option: ")
+        if choice == "1":
+            db.clear_database()
+        elif choice == "2":
+            query = input("Enter SQL query: ")
+            db.manual_query(query)
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")

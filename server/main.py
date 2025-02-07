@@ -1,6 +1,8 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from pydantic import BaseModel
 import cv2
 import numpy as np
 
@@ -17,6 +19,17 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+
+class UpdateRequest(BaseModel):
+    submitted: int
+
+
+PROCESSED_IMAGES_DIR = Path("../processed_images")
+PROCESSED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/images", StaticFiles(directory=PROCESSED_IMAGES_DIR), name="images")
+
 
 UPLOAD_DIR = Path("../unprocessed_images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -49,6 +62,12 @@ async def upload_images(images: list[UploadFile] = File(...)):
     process_images()
 
     return {"message": "Sucessfully processed images.", "files": saved_files}
+
+
+@app.post("/result/update")
+async def update_result(request: UpdateRequest):
+    db.update_result_to_submitted(request.submitted)
+    return {"message": "Result updated successfully"}
 
 
 @app.get("/next")
