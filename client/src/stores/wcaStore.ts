@@ -4,6 +4,7 @@ import { goto } from '$app/navigation';
 // Store for WCA authentication token and expiry
 export const wcaToken = writable<string | null>(null);
 export const wcaTokenExpiry = writable<Date | null>(null);
+export const liveApiKey = writable<Map<string, string>>(new Map());
 
 const links = {
 	appId: 'r464RMsyf5jpnpz7xpBlQcrUU9gqjLN1336d0ucUxo0',

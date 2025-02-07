@@ -82,7 +82,18 @@ class CompetitionDatabase:
                 INSERT INTO results (competitorID, round, event, time1, time2, time3, time4, time5, time6, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (competitor_id, round_num, event, time1, time2, time3, time4, time5, time6, status),
+                (
+                    competitor_id,
+                    round_num,
+                    event,
+                    time1,
+                    time2,
+                    time3,
+                    time4,
+                    time5,
+                    time6,
+                    status,
+                ),
             )
             conn.commit()
             result_id = cursor.lastrowid
@@ -125,6 +136,24 @@ class CompetitionDatabase:
             conn.commit()
         except sqlite3.Error as e:
             print(f"Error updating result: {e}")
+        finally:
+            conn.close()
+
+    def get_all(self):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                """SELECT competitorID, round, event FROM results WHERE status = 'scanned' """
+            )
+            cursor.row_factory = sqlite3.Row
+            rows = cursor.fetchall()
+            result = [dict(row) for row in rows]
+            return result
+
+        except sqlite3.Error as e:
+            print(f"Error fetching result: {e}")
+            return []
         finally:
             conn.close()
 
