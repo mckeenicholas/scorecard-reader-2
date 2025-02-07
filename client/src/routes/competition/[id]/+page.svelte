@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { submitWCALiveResults, type ScannedResult } from '$lib/utils';
+	import { idToEventName, submitWCALiveResults, type ScannedResult } from '$lib/utils';
 	import ResultsEntryField from '../../../components/ResultsEntryField.svelte';
 	import { liveApiKey, wcaToken } from '../../../stores/wcaStore';
 	import { get } from 'svelte/store';
@@ -144,46 +144,47 @@
 	};
 </script>
 
-<main class="flex flex-col items-center gap-4 p-20">
+<main class="flex flex-col items-center gap-4 p-10">
 	{#if hasKey}
-		<h1>Upload Results</h1>
-		<input
-			type="file"
-			accept="image/*"
-			multiple
-			onchange={(e) => (files = Array.from(e.target.files))}
-		/>
-		<button class="border bg-slate-200 p-2" onclick={uploadFiles}>Upload</button>
+		<div class="flex">
+			<input
+				type="file"
+				accept="image/*"
+				multiple
+				onchange={(e) => (files = Array.from(e.target.files))}
+			/>
+			<button class="bg-slate rounded-md border-2 p-2 hover:bg-gray-100" onclick={uploadFiles}
+				>Upload</button
+			>
+			<button onclick={getResults} class="bg-slate ms-2 rounded-md border-2 p-2 hover:bg-gray-100"
+				>View All Results</button
+			>
+			<button
+				onclick={getNextResult}
+				class="bg-slate ms-2 rounded-md border-2 p-2 hover:bg-gray-100">View Next Result</button
+			>
+		</div>
 		<p>{message}</p>
-
-		{#if loading}
-			<p>Processing results, please wait...</p>
-		{/if}
-
-		<button onclick={getResults} class="border bg-slate-200 p-2">View All Results</button>
+		{#if loading}<p>Processing results, please wait...</p>{/if}
 
 		{#if showModal}
 			<div class="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75">
-				<div class="w-96 rounded-lg bg-white p-6">
-					<h2 class="mb-4 text-xl">All Results</h2>
+				<div class="w-96 rounded-lg bg-white p-4">
+					<h2 class="mb-2 text-xl">All Results</h2>
 					<ul>
 						{#each results as result}
 							<li>
 								<strong>CompetitorID:</strong>
-								{result.competitorID} |
-								<strong>Round:</strong>
-								{result.round} |
-								<strong>Event:</strong>
-								{result.event}
+								{result.competitorID} | <strong>Round:</strong>
+								{result.round} | <strong>Event:</strong>
+								{idToEventName(result.event)}
 							</li>
 						{/each}
 					</ul>
-					<button class="mt-4 rounded bg-red-500 p-2 text-white" onclick={closeModal}>Close</button>
+					<button class="mt-2 rounded bg-red-500 p-2 text-white" onclick={closeModal}>Close</button>
 				</div>
 			</div>
 		{/if}
-
-		<button onclick={getNextResult} class="border bg-slate-200 p-2">View Next Result</button>
 
 		{#if currentResult}
 			<!-- svelte-ignore a11y_missing_attribute -->
@@ -197,7 +198,7 @@
 						<div class="my-10">
 							<p class="text-xl"><strong>Competitor ID:</strong> {currentResult.competitorID}</p>
 							<p class="text-xl"><strong>Round:</strong> {currentResult.round}</p>
-							<p class="text-xl"><strong>Event:</strong> {currentResult.event}</p>
+							<p class="text-xl"><strong>Event:</strong> {idToEventName(currentResult.event)}</p>
 						</div>
 						<ResultsEntryField bind:solveData={currentResult} submitCallBack={submit} />
 					</div>
@@ -208,14 +209,16 @@
 		{#if noResultsMessage}
 			<p>{noResultsMessage}</p>
 			{#if showManualQueryButton}
-				<button class="border bg-blue-200 p-2" onclick={manualQuery}
+				<button class="bg-slate rounded-md border-2 p-2 hover:bg-gray-100" onclick={manualQuery}
 					>Manually Fetch Next Result</button
 				>
 			{/if}
 		{/if}
 	{:else}
 		<p>Please enter your WCA Live API Key</p>
-		<input bind:value={apiKeyInput} class="border border-black" />
-		<button onclick={saveKey} class="border bg-slate-200 p-2">Enter</button>
+		<input type="password" bind:value={apiKeyInput} class="bg-slate rounded-md border-2 text-2xl" />
+		<button onclick={saveKey} class="bg-slate rounded-md border-2 p-2 hover:bg-gray-100"
+			>Enter</button
+		>
 	{/if}
 </main>

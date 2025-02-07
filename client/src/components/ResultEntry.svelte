@@ -166,4 +166,4 @@
 	DNS
 </button>
 
-<span class="ml-1 text-2xl">{value}</span>
+<!-- <span class="ml-1 text-2xl">{value}</span> -->

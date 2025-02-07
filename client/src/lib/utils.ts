@@ -120,3 +120,7 @@ export const submitWCALiveResults = async (
 
 	return await response.json();
 };
+
+export const idToEventName = (id: SupportedWCAEvent) => {
+	return eventNames[id];
+};
