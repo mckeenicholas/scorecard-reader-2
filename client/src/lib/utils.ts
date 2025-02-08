@@ -1,4 +1,4 @@
-const STAGING = true;
+const STAGING = import.meta.env.VITE_STAGING === 'true';
 
 export const eventNames: { [key: string]: string } = {
 	'333': '3x3x3 Cube',
